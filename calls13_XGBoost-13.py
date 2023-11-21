@@ -1,6 +1,6 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_absolute_error  # Import mean_absolute_error
 import xgboost as xgb
 import matplotlib.pyplot as plt
 
@@ -39,8 +39,6 @@ print(cleaned_df.groupby(['hour', 'weekday', 'month'])['value'].describe())
 print(f"Total number of rows before filtering: {len(df)}")
 print(f"Total number of rows after filtering: {len(cleaned_df)}")
 
-
-
 historical_data = cleaned_df[
     ((cleaned_df['weekday'] == prediction_date.weekday()) & (cleaned_df['month'].between(prediction_date.month - 1, prediction_date.month + 1)))
 ]
@@ -49,7 +47,8 @@ historical_data = cleaned_df[
 X_train_filtered, y_train_filtered = cleaned_df[['hour', 'weekday', 'month']], cleaned_df['value']
 
 # Step 7: Train the XGBoost model using filtered data
-model = xgb.XGBRegressor(objective='reg:squarederror')
+#model = xgb.XGBRegressor(objective='reg:squarederror')
+model = xgb.XGBRegressor(objective='reg:pseudohubererror', alpha=0.0003)
 model.fit(X_train_filtered, y_train_filtered)
 
 # Step 8: Make predictions on the test set
@@ -60,9 +59,9 @@ y_pred = model.predict(X_test)
 if any(pd.isna(y_test)) or any(pd.isna(y_pred)):
     print("Error: NaN values found in the test set or predictions.")
 else:
-    # Step 9: Calculate Mean Squared Error on Test Set
-    mse = mean_squared_error(y_test, y_pred)
-    print(f'Mean Squared Error on Test Set: {mse}')
+    # Step 9: Calculate Mean Absolute Error on Test Set
+    mae = mean_absolute_error(y_test, y_pred)
+    print(f'Mean Absolute Error on Test Set: {mae}')
 
     # Step 10: Check Residuals
     residuals = y_test - y_pred
