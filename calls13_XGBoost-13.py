@@ -100,7 +100,8 @@ else:
         })
 
     y_user_pred = best_model.predict(X_user)
-    ax.scatter(X_user['hour'], y_user_pred, label='Predicted Values (User Input)', color='red', marker='x')
+    label_str = f'Predicted Values ({input_date})'
+    ax.scatter(X_user['hour'], y_user_pred, label=label_str, color='red', marker='x')
 
     ax.set_title('Historical and Predicted Values Plot')
     ax.set_xlabel('Hour')
