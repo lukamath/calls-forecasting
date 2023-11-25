@@ -15,6 +15,11 @@ df['weekday'] = df['date'].dt.weekday
 df['month'] = df['date'].dt.month
 df['week'] = df['date'].dt.isocalendar().week
 
+# Introduce lag features
+lag_periods = [1, 24]  # Lag for 1 hour and 1 day
+for lag in lag_periods:
+    df[f'value_lag_{lag}'] = df['value'].shift(lag)
+
 # Step 3: User input for prediction date
 input_date = input("Enter a date (dd/mm/yyyy) for prediction: ")
 prediction_date = pd.to_datetime(input_date, format='%d/%m/%Y')
@@ -24,7 +29,8 @@ train_size = int(len(df) * 0.8)
 train, test = df[:train_size], df[train_size:]
 
 # Step 5: Prepare data for XGBoost
-X_train, y_train = train[['hour', 'weekday', 'month', 'week']], train['value']
+#X_train, y_train = train[['hour', 'weekday', 'month', 'week']], train['value']
+X_train, y_train = train[['hour', 'weekday', 'month', 'week', 'value_lag_1', 'value_lag_24']], train['value']
 
 # Step 6: Filter historical data for the specified prediction date's weekday, month, and adjacent weeks
 cleaned_df_grouped = df.groupby(['hour', 'weekday', 'month', 'week'])
@@ -49,7 +55,8 @@ historical_data = cleaned_df[
 ]
 
 # Use the filtered data to train the model
-X_train_filtered, y_train_filtered = cleaned_df[['hour', 'weekday', 'month', 'week']], cleaned_df['value']
+#X_train_filtered, y_train_filtered = cleaned_df[['hour', 'weekday', 'month', 'week']], cleaned_df['value']
+X_train_filtered, y_train_filtered = cleaned_df[['hour', 'weekday', 'month', 'week', 'value_lag_1', 'value_lag_24']], cleaned_df['value']
 
 # Step 7: Hyperparameter Tuning using GridSearchCV
 param_grid = {
@@ -74,7 +81,8 @@ print("Best Hyperparameters:", grid_search.best_params_)
 best_model = grid_search.best_estimator_
 
 # Step 8: Make predictions on the test set
-X_test, y_test = test[['hour', 'weekday', 'month', 'week']], test['value']
+#X_test, y_test = test[['hour', 'weekday', 'month', 'week']], test['value']
+X_test, y_test = test[['hour', 'weekday', 'month', 'week', 'value_lag_1', 'value_lag_24']], test['value']
 y_pred = best_model.predict(X_test)
 
 # Check for NaN values
@@ -95,9 +103,13 @@ else:
     ax.scatter(historical_data['hour'], historical_data['value'], label='Historical Values', color='blue', marker='o', alpha=0.5)
 
     # Plot predicted values for the user-specified date
+    #X_user = pd.DataFrame({'hour': range(9, 25), 'weekday': [prediction_date.weekday()] * 16, 'month': [prediction_date.month] * 16,
+    #'week': [prediction_date.isocalendar().week] * 16,
     X_user = pd.DataFrame({'hour': range(9, 25), 'weekday': [prediction_date.weekday()] * 16, 'month': [prediction_date.month] * 16,
     'week': [prediction_date.isocalendar().week] * 16,
-        })
+    'value_lag_1': [historical_data['value'].iloc[-1]] * 16,  # Use the last known value as the lag feature
+    'value_lag_24': [historical_data['value'].iloc[-24]] * 16,  # Use the value from 24 hours ago as the lag feature
+    })
 
     y_user_pred = best_model.predict(X_user)
     label_str = f'Predicted Values ({input_date})'
