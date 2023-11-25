@@ -59,9 +59,9 @@ X_train_filtered, y_train_filtered = cleaned_df[['hour', 'weekday', 'month', 'we
 
 # Step 7: Hyperparameter Tuning using GridSearchCV
 param_grid = {
-    'n_estimators': [50, 100, 150],
-    'learning_rate': [0.01, 0.1, 0.2],
-    'max_depth': [3, 5, 7],
+    'n_estimators': [43, 50, 51],
+    'learning_rate': [0.13, 0.17, 0.2],
+    'max_depth': [2, 3, 4],
 }
 
 grid_search = GridSearchCV(
